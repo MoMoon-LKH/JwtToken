@@ -1,10 +1,17 @@
 package com.example.jwt.config;
 
+import com.example.jwt.filter.JwtAuthenticationFilter;
+import com.example.jwt.filter.MyFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.filter.CorsFilter;
 
 @EnableWebSecurity
@@ -12,6 +19,11 @@ import org.springframework.web.filter.CorsFilter;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final CorsFilter corsFilter;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -22,6 +34,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .and()
                 .addFilter(corsFilter) // @CrosOrigin(인증x) 작동, 인증O 작동 필요 시 필터 등록
+                .addFilterBefore(new MyFilter(), SecurityContextPersistenceFilter.class)
+                .addFilter(new JwtAuthenticationFilter(authenticationManager())) // AuthenticationManger
                 .formLogin().disable()
                 .httpBasic().disable()
                 // 요청을 할 때마다 header - Authorization: 인증 정보(ID, PW)를 보내는 방식, 암호화x( https를 쓸 경우 암호화 )
