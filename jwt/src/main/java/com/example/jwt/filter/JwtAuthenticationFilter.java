@@ -1,5 +1,7 @@
 package com.example.jwt.filter;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.example.jwt.auth.PrincipalDetails;
 import com.example.jwt.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Date;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -66,6 +69,17 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // JWT를 만들어서 request 요청한 사용ㅇ자에게 JWT 토큰을 response 해주면 됨
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
+
+        // Hash 암호방식
+        String jwtToken = JWT.create()
+                .withSubject(principalDetails.getUsername())
+                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 10)))
+                .withClaim("id", principalDetails.getUser().getId())
+                .withClaim("usernaem", principalDetails.getUser().getUsername())
+                .sign(Algorithm.HMAC512("jwtSample"));
+
+        response.addHeader("Authorization", "Bearer " + jwtToken);
 
     }
 }
